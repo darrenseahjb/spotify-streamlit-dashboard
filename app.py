@@ -1,4 +1,5 @@
 import base64
+import html
 import os
 from pathlib import Path
 
@@ -254,15 +255,11 @@ def inject_styles():
                 margin-bottom: -0.08rem;
             }
 
-            .snapshot-grid-row {
+            .snapshot-grid {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 1.06rem;
-                margin-bottom: 1.42rem;
-            }
-
-            .snapshot-grid-row:last-child {
-                margin-bottom: 0;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.98rem;
+                align-content: start;
             }
 
             .stat-card {
@@ -554,6 +551,58 @@ def inject_styles():
                 background: var(--panel-strong);
             }
 
+            .recent-mobile-list {
+                display: none;
+                margin-top: 0.42rem;
+                border: 1px solid var(--line);
+                border-radius: 18px;
+                overflow: hidden;
+                background: var(--panel-strong);
+            }
+
+            .recent-mobile-item {
+                padding: 0.82rem 0.92rem;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            }
+
+            .recent-mobile-item:last-child {
+                border-bottom: none;
+            }
+
+            .recent-mobile-top {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 0.8rem;
+                margin-bottom: 0.22rem;
+            }
+
+            .recent-mobile-track {
+                font-family: "Space Grotesk", sans-serif;
+                font-size: 0.98rem;
+                line-height: 1.12;
+                color: #f4f7fc;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .recent-mobile-time {
+                color: var(--muted);
+                font-size: 0.72rem;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+
+            .recent-mobile-meta {
+                color: var(--muted);
+                font-size: 0.82rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
             .recent-table {
                 width: 100%;
                 border-collapse: collapse;
@@ -631,8 +680,9 @@ def inject_styles():
                     min-height: unset;
                 }
 
-                .snapshot-grid-row {
+                .snapshot-grid {
                     grid-template-columns: 1fr;
+                    gap: 0.86rem;
                     margin-bottom: 0.9rem;
                 }
 
@@ -650,9 +700,24 @@ def inject_styles():
                     height: 176px;
                 }
 
+                .stat-card.compact {
+                    min-height: 110px;
+                    height: auto;
+                }
+
                 .stat-value.long,
                 .stat-value.xlong {
                     font-size: clamp(1.45rem, 6vw, 2rem);
+                }
+            }
+
+            @media (max-width: 720px) {
+                .recent-table-wrap {
+                    display: none;
+                }
+
+                .recent-mobile-list {
+                    display: block;
                 }
             }
         </style>
@@ -825,7 +890,7 @@ def render_hero(timezone_name):
     st.markdown(hero_markup, unsafe_allow_html=True)
 
 
-def render_stat_card(kicker, value, muted_text, compact=False, value_class_override=None):
+def build_stat_card_html(kicker, value, muted_text, compact=False, value_class_override=None):
     compact_class = ""
     if value_class_override is None:
         compact_measure = max(
@@ -840,14 +905,24 @@ def render_stat_card(kicker, value, muted_text, compact=False, value_class_overr
         compact_class = value_class_override
     card_class = "stat-card compact" if compact else "stat-card"
 
+    return (
+        f'<div class="{card_class}">'
+        f'<div class="stat-kicker">{html.escape(str(kicker))}</div>'
+        f'<div class="stat-value{compact_class}">{html.escape(str(value))}</div>'
+        f'<div class="muted">{html.escape(str(muted_text))}</div>'
+        f"</div>"
+    )
+
+
+def render_stat_card(kicker, value, muted_text, compact=False, value_class_override=None):
     st.markdown(
-        f"""
-        <div class="{card_class}">
-            <div class="stat-kicker">{kicker}</div>
-            <div class="stat-value{compact_class}">{value}</div>
-            <div class="muted">{muted_text}</div>
-        </div>
-        """,
+        build_stat_card_html(
+            kicker,
+            value,
+            muted_text,
+            compact=compact,
+            value_class_override=value_class_override,
+        ),
         unsafe_allow_html=True,
     )
 
@@ -892,11 +967,26 @@ def render_recent_listens(history):
     recent_listens = history[
         ["played_at_local", "track_name", "artist", "album"]
     ].head(20).copy()
-    recent_listens["played_at_local"] = recent_listens["played_at_local"].apply(
+    recent_listens["played_at_display"] = recent_listens["played_at_local"].apply(
         lambda ts: f"{ts.day}/{ts.month} {ts.strftime('%I:%M %p')}"
     )
-    recent_listens = recent_listens.rename(columns={"played_at_local": "played_at"})
-    recent_table_html = recent_listens.to_html(index=False, classes="recent-table", border=0)
+    recent_table_html = (
+        recent_listens[["played_at_display", "track_name", "artist", "album"]]
+        .rename(columns={"played_at_display": "played_at"})
+        .to_html(index=False, classes="recent-table", border=0)
+    )
+    recent_mobile_rows = []
+
+    for row in recent_listens.itertuples(index=False):
+        recent_mobile_rows.append(
+            '<div class="recent-mobile-item">'
+            '<div class="recent-mobile-top">'
+            f'<div class="recent-mobile-track">{html.escape(str(row.track_name))}</div>'
+            f'<div class="recent-mobile-time">{html.escape(str(row.played_at_display))}</div>'
+            "</div>"
+            f'<div class="recent-mobile-meta">{html.escape(f"{row.artist} • {row.album}")}</div>'
+            "</div>"
+        )
 
     st.markdown(
         f"""
@@ -904,6 +994,9 @@ def render_recent_listens(history):
             <summary><span class="recent-arrow">&#9656;</span>Recent Listening</summary>
             <div class="recent-table-wrap">
                 {recent_table_html}
+            </div>
+            <div class="recent-mobile-list">
+                {''.join(recent_mobile_rows)}
             </div>
         </details>
         """,
@@ -964,40 +1057,42 @@ with hero_col:
     render_hero(timezone_name)
 
 with snapshot_col:
-    snapshot_row_1_col_1, snapshot_row_1_col_2 = st.columns(2, gap="small")
-    with snapshot_row_1_col_1:
-        render_stat_card(
+    snapshot_cards = [
+        build_stat_card_html(
             "Today",
             format_duration(total_duration_today),
             f"{today_track_count} {today_track_label} logged today",
             compact=True,
-        )
-    with snapshot_row_1_col_2:
-        render_stat_card(
+        ),
+        build_stat_card_html(
             "Artists Tracked",
             str(unique_artists),
             f"{total_tracks} total plays logged",
             compact=True,
-        )
+        ),
+    ]
 
-    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
-
-    snapshot_row_2_col_1, snapshot_row_2_col_2 = st.columns(2, gap="small")
-    with snapshot_row_2_col_1:
-        render_stat_card(
-            "Latest Track",
-            latest_track["track_name"],
-            f"{latest_track['artist']} • {latest_track['played_at_local'].strftime('%I:%M %p')}",
-            compact=True,
-        )
-    with snapshot_row_2_col_2:
-        render_stat_card(
-            "Peak Listening Day",
-            peak_day_value,
-            f"Tracked on {peak_day_date}",
-            compact=True,
-            value_class_override="",
-        )
+    snapshot_cards.extend(
+        [
+            build_stat_card_html(
+                "Latest Track",
+                latest_track["track_name"],
+                f"{latest_track['artist']} • {latest_track['played_at_local'].strftime('%d %b, %I:%M %p')}",
+                compact=True,
+            ),
+            build_stat_card_html(
+                "Peak Listening Day",
+                peak_day_value,
+                f"Tracked on {peak_day_date}",
+                compact=True,
+                value_class_override="",
+            ),
+        ]
+    )
+    st.markdown(
+        '<div class="snapshot-grid">' + "".join(snapshot_cards) + "</div>",
+        unsafe_allow_html=True,
+    )
 
 st.markdown("</div>", unsafe_allow_html=True)
 
