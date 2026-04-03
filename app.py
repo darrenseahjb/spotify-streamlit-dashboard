@@ -719,6 +719,13 @@ def inject_styles():
                 .recent-mobile-list {
                     display: block;
                 }
+
+                div[data-testid="stVegaLiteChart"] > div,
+                div[data-testid="stVegaLiteChart"] canvas,
+                div[data-testid="stVegaLiteChart"] svg {
+                    pointer-events: none !important;
+                    touch-action: pan-y !important;
+                }
             }
         </style>
         """,
