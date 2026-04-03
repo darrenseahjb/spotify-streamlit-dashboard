@@ -1,6 +1,6 @@
 # Spotify Listening Analytics Dashboard
 
-Public-facing Streamlit dashboard for the Spotify Listening Analytics project.
+Public Streamlit dashboard for the Spotify Listening Analytics project.
 
 ## Quick Links
 
@@ -8,36 +8,58 @@ Public-facing Streamlit dashboard for the Spotify Listening Analytics project.
 - Source Code: [Spotify Listening Analytics Pipeline](https://github.com/darrenseahjb/spotify)
 - Dashboard Repo: [spotify-streamlit-dashboard](https://github.com/darrenseahjb/spotify-streamlit-dashboard)
 
-## Overview
+## What This Repo Is
 
-This is the frontend repo.
+This is the presentation-layer repo.
 
-It reads from `spotify_history` and turns listening logs into a live dashboard focused on current activity, repeat artists, weekly flow, and listening-hour patterns.
+It reads listening history from `spotify_history` and turns it into a public dashboard focused on:
+- current listening activity
+- repeat artists
+- weekly listening rhythm
+- day/hour listening patterns
+
+The emphasis here is UI, metric framing, and visual hierarchy rather than ingestion logic.
+
+## Why This Exists Separately
+
+The dashboard changed faster than the ingestion code.
+
+Keeping it in its own repo made it easier to iterate on:
+- layout and styling
+- chart design
+- mobile behavior
+- Streamlit Community Cloud deployment
 
 ## Stack
 
 - Python
 - Streamlit
 - PostgreSQL
-- `Altair`
-
-## What Makes This Repo Different
-
-This repo is focused on:
-- dashboard UX
-- visual hierarchy
-- metric presentation
-- chart design
-- public deployment
+- Altair
 
 ## Repository Guide
 
 - `app.py`
-  Main Streamlit dashboard application.
+  Main Streamlit application, including layout, styling, queries, transforms, and charts.
 - `requirements.txt`
-  Python dependencies for the public dashboard deployment.
+  Runtime dependencies for the Streamlit deployment.
 - `.streamlit/secrets.toml.example`
   Template for the dashboard's runtime secrets.
+
+## What the Dashboard Shows
+
+- hero section with identity and project context
+- compact KPI cards for current activity and summary metrics
+- repeat-artist leaderboard
+- weekly listening trend
+- weekly/hourly listening heatmap
+- recent listening log
+
+## Tradeoffs and Limitations
+
+- The dashboard reads directly from PostgreSQL for simplicity. That is acceptable for a personal demo, but it is not the strongest architecture for a production-facing analytics product.
+- The app is built in one Streamlit entry file, which is practical for a portfolio project but less ideal for long-term team maintenance.
+- The quality of the insights depends on the depth of collected history. With shallow history, the visuals are still useful, but less representative.
 
 ## Streamlit Community Cloud Settings
 
@@ -58,15 +80,6 @@ Expected keys:
 - `DB_PORT`
 - `APP_TIMEZONE`
 - `SPOTIFY_PROFILE_URL`
-
-## Dashboard Focus
-
-The dashboard is designed to feel less like a default analytics page and more like a small music product:
-- a hero section with identity and context
-- compact KPI cards
-- a ranked repeat-artist module
-- a dominant weekly behavior chart
-- supporting hour-pattern analysis
 
 ## Related Repository
 
