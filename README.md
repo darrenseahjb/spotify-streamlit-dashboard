@@ -20,6 +20,16 @@ It reads listening history from `spotify_history` and turns it into a public das
 
 The emphasis here is UI, metric framing, and visual hierarchy rather than ingestion logic.
 
+## Repo Split
+
+This dashboard used to sit alongside the ingestion code in the main project repo.
+
+It now lives separately on purpose:
+- this repo owns the public dashboard experience and Streamlit deployment
+- the main pipeline repo owns Spotify ingestion, scheduling, schema, and storage
+
+That split keeps the public-facing app smaller and easier to iterate on without mixing it back into the AWS pipeline code.
+
 ## Why This Exists Separately
 
 The dashboard changed faster than the ingestion code.
