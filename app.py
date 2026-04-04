@@ -919,21 +919,6 @@ def build_stat_card_html(kicker, value, muted_text, compact=False, value_class_o
         f'<div class="muted">{html.escape(str(muted_text))}</div>'
         f"</div>"
     )
-
-
-def render_stat_card(kicker, value, muted_text, compact=False, value_class_override=None):
-    st.markdown(
-        build_stat_card_html(
-            kicker,
-            value,
-            muted_text,
-            compact=compact,
-            value_class_override=value_class_override,
-        ),
-        unsafe_allow_html=True,
-    )
-
-
 def render_leaderboard(artists_df):
     medal_map = {1: "01", 2: "02", 3: "03", 4: "04", 5: "05"}
     caption_map = {
@@ -1032,7 +1017,6 @@ if history.empty:
 
 total_tracks = len(history)
 unique_artists = history["artist"].nunique()
-total_hours = round(history["duration_ms"].sum() / 3600000, 1)
 today_local = pd.Timestamp.now(tz=timezone_name).date()
 history_today = history[history["played_at_local"].dt.date == today_local]
 total_duration_today = int(history_today["duration_ms"].sum())
